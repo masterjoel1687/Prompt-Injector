@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Prompt Injection Tester</title>
+<style>
+:root{
+  --bg:#070a0f;--panel:#0d121a;--panel2:#111824;--border:#202a38;
+  --text:#eef3f8;--muted:#8793a3;--accent:#63e6be;--danger:#ff6b6b;
+  --warning:#ffd166;--blue:#74c0fc;--shadow:0 18px 50px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 85% 0%,#12202a 0,#070a0f 35%);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh}
+.topbar{height:70px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(7,10,15,.88);backdrop-filter:blur(14px);position:sticky;top:0;z-index:10}
+.brand{display:flex;gap:13px;align-items:center}.logo{width:38px;height:38px;border:1px solid #36505b;border-radius:10px;display:grid;place-items:center;color:var(--accent);font-weight:800}.brand h1{font-size:17px;margin:0}.brand p{font-size:11px;color:var(--muted);margin:3px 0 0}
+.status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}.dot{width:8px;height:8px;border-radius:50%;background:#667085}.dot.live{background:var(--accent);box-shadow:0 0 12px rgba(99,230,190,.7)}
+.wrap{max-width:1500px;margin:auto;padding:26px}
+.hero{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:22px}.hero h2{font-size:30px;margin:0 0 7px}.hero p{margin:0;color:var(--muted)}
+.actions{display:flex;gap:10px}.btn{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:11px 16px;border-radius:9px;font-weight:700}.btn.primary{background:var(--accent);color:#06110d;border-color:var(--accent)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.target{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow);margin-bottom:18px}.target-grid{display:grid;grid-template-columns:1.8fr .7fr .9fr auto;gap:12px;align-items:end}.field label{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}.field input,.field select{width:100%;background:#080d14;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:11px;outline:none}.field input:focus,.field select:focus{border-color:#4f6b78}
+.metrics{display:grid;grid-template-columns:1.25fr repeat(5,1fr);gap:12px;margin-bottom:18px}.card{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:18px;min-height:100px}.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.metric-value{font-size:27px;font-weight:800;margin-top:10px}.risk{display:flex;align-items:center;justify-content:space-between;gap:15px}.risk-score{font-size:38px}.badge{font-size:11px;font-weight:800;padding:6px 9px;border-radius:6px;background:#321416;color:#ff8787;border:1px solid #663033}.good{background:#102a23;color:var(--accent);border-color:#245c4d}.review{background:#2e2815;color:var(--warning);border-color:#66541d}
+.grid{display:grid;grid-template-columns:1.1fr 1.9fr;gap:18px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}.panel-head{padding:17px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}.panel-head h3{margin:0;font-size:14px}.panel-head span{font-size:11px;color:var(--muted)}
+.severity{padding:18px}.sev-row{margin:14px 0}.sev-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px}.bar{height:8px;background:#18212c;border-radius:99px;overflow:hidden}.fill{height:100%;border-radius:99px}.critical{background:#ff6b6b}.high{background:#ff922b}.medium{background:#ffd43b}.low{background:#63e6be}
+.adaptive{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:18px}.mini{background:#0a1017;border:1px solid var(--border);border-radius:9px;padding:13px}.mini strong{display:block;font-size:20px}.mini small{color:var(--muted);font-size:10px}
+.table-wrap{overflow:auto}.finding{padding:16px 18px;border-bottom:1px solid var(--border);cursor:pointer}.finding:last-child{border-bottom:0}.finding:hover{background:#101721}.finding-main{display:flex;justify-content:space-between;gap:15px}.finding-title{font-weight:750;font-size:13px}.finding-id{color:var(--muted);font-size:11px;margin-right:8px}.finding-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.pill{font-size:10px;padding:4px 7px;border-radius:5px;border:1px solid var(--border);color:var(--muted)}.pill.crit{color:#ff8787;border-color:#613137}.pill.high{color:#ffa94d;border-color:#64451e;background:transparent}.pill.med{color:#ffe066;border-color:#66591e;background:transparent}.finding-sub{display:flex;gap:18px;color:var(--muted);font-size:11px;margin-top:9px}.details{margin-top:12px;padding:13px;background:#080d14;border:1px solid var(--border);border-radius:9px;display:none}.finding.open .details{display:block}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.detail h4{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px}.detail p,.detail li{font-size:12px;line-height:1.55;color:#c9d2dc}.detail ul{margin:5px 0 0;padding-left:18px}
+.empty{padding:45px;text-align:center;color:var(--muted)}.loading{display:none;position:fixed;inset:0;background:rgba(3,6,9,.72);z-index:30;align-items:center;justify-content:center}.loading.show{display:flex}.loader{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:22px 28px;text-align:center}.spinner{width:25px;height:25px;border:3px solid #27313d;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:auto auto 12px}@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;right:22px;bottom:22px;background:#111923;border:1px solid var(--border);padding:12px 15px;border-radius:9px;font-size:12px;display:none;z-index:40;box-shadow:var(--shadow)}.toast.show{display:block}
+@media(max-width:1050px){.metrics{grid-template-columns:repeat(3,1fr)}.metrics .card:first-child{grid-column:span 3}.grid{grid-template-columns:1fr}.target-grid{grid-template-columns:1fr 1fr}.target-grid .btn{width:100%}}
+@media(max-width:650px){.wrap{padding:15px}.topbar{padding:0 15px}.hero{display:block}.actions{margin-top:15px}.metrics{grid-template-columns:1fr 1fr}.metrics .card:first-child{grid-column:span 2}.target-grid{grid-template-columns:1fr}.adaptive{grid-template-columns:1fr 1fr}.detail-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand"><div class="logo">AI</div><div><h1>AI Prompt Injection Tester</h1><p>Black-box AI security assessment console</p></div></div>
+  <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">API offline</span></div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div><h2>Security Assessment</h2><p>Detect, verify and prioritize prompt-injection vulnerabilities.</p></div>
+    <div class="actions"><button class="btn" id="healthBtn">Check API</button><button class="btn" id="exportBtn" disabled>Export JSON</button></div>
+  </section>
+
+  <section class="target">
+    <div class="target-grid">
+      <div class="field"><label>Target Endpoint</label><input id="endpoint" value="http://127.0.0.1:5001/chat"></div>
+      <div class="field"><label>Provider</label><select id="provider"><option value="generic">Generic HTTP</option><option value="ollama">Ollama</option><option value="openai">OpenAI</option><option value="gemini">Gemini</option><option value="anthropic">Anthropic</option></select></div>
+      <div class="field"><label>Model (optional)</label><input id="model" placeholder="e.g. gemma3"></div>
+      <button class="btn primary" id="scanBtn">Run Security Scan</button>
+    </div>
+  </section>
+
+  <section class="metrics">
+    <div class="card risk"><div><div class="metric-label">Risk Score</div><div id="score" class="metric-value risk-score">—</div></div><span id="rating" class="badge">NO SCAN</span></div>
+    <div class="card"><div class="metric-label">Benchmark Tests</div><div id="total" class="metric-value">—</div></div>
+    <div class="card"><div class="metric-label">Blocked</div><div id="blocked" class="metric-value">—</div></div>
+    <div class="card"><div class="metric-label">Confirmed</div><div id="vulnerable" class="metric-value">—</div></div>
+    <div class="card"><div class="metric-label">Review</div><div id="review" class="metric-value">—</div></div>
+    <div class="card"><div class="metric-label">Adaptive Tests</div><div id="adaptiveTests" class="metric-value">—</div></div>
+  </section>
+
+  <section class="grid">
+    <div>
+      <div class="panel" style="margin-bottom:18px">
+        <div class="panel-head"><h3>Severity Distribution</h3><span id="severityTotal">0 findings</span></div>
+        <div class="severity">
+          <div class="sev-row"><div class="sev-top"><span>Critical</span><strong id="criticalN">0</strong></div><div class="bar"><div id="criticalBar" class="fill critical" style="width:0%"></div></div></div>
+          <div class="sev-row"><div class="sev-top"><span>High</span><strong id="highN">0</strong></div><div class="bar"><div id="highBar" class="fill high" style="width:0%"></div></div></div>
+          <div class="sev-row"><div class="sev-top"><span>Medium</span><strong id="mediumN">0</strong></div><div class="bar"><div id="mediumBar" class="fill medium" style="width:0%"></div></div></div>
+          <div class="sev-row"><div class="sev-top"><span>Low</span><strong id="lowN">0</strong></div><div class="bar"><div id="lowBar" class="fill low" style="width:0%"></div></div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Adaptive Red Team</h3><span>Reproducibility</span></div>
+        <div class="adaptive">
+          <div class="mini"><strong id="tested">0</strong><small>Vulnerabilities tested</small></div>
+          <div class="mini"><strong id="confirmed">0</strong><small>Confirmed</small></div>
+          <div class="mini"><strong id="reviewed">0</strong><small>Reviewed</small></div>
+          <div class="mini"><strong id="adaptiveCount">0</strong><small>Verification requests</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Confirmed Findings</h3><span id="findingCount">0 findings</span></div>
+      <div id="findings"><div class="empty">Run a scan to populate security findings.</div></div>
+    </div>
+  </section>
+
+<section class="target" id="retestPanel" style="display:none;margin-top:18px">
+  <div class="hero" style="margin-bottom:12px">
+    <div><h2 style="font-size:22px">Attack → Fix → Retest</h2><p>Re-run the same benchmark and verify whether the security fixes actually worked.</p></div>
+    <button class="btn primary" id="retestBtn">RETEST FIX</button>
+  </div>
+  <div class="adaptive" id="retestStats">
+    <div class="mini"><strong id="beforeScore">—</strong><small>BEFORE RISK SCORE</small></div>
+    <div class="mini"><strong id="afterScore">—</strong><small>AFTER RISK SCORE</small></div>
+    <div class="mini"><strong id="fixedCount">0</strong><small>FIXED</small></div>
+    <div class="mini"><strong id="remainingCount">0</strong><small>REMAINING</small></div>
+  </div>
+  <div id="retestStatus" class="detail" style="margin-top:14px;display:block">Run a scan first to establish a baseline.</div>
+</section>
+</main>
+</div>
+
+<div id="loading" class="loading"><div class="loader"><div class="spinner"></div><strong>Running security assessment</strong><div style="color:var(--muted);font-size:11px;margin-top:7px">Executing benchmark and adaptive verification tests…</div></div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let lastResult = null;
+
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),3200)}
+function setLoading(v){$("loading").classList.toggle("show",v);$("scanBtn").disabled=v}
+function setAPI(ok){$("statusDot").className="dot"+(ok?" live":"");$("statusText").textContent=ok?"API online":"API offline"}
+
+async function checkHealth(){
+  try{
+    const r=await fetch("http://127.0.0.1:5000/api/health");
+    if(!r.ok) throw new Error();
+    setAPI(true); toast("Backend API is healthy.");
+  }catch(e){setAPI(false);toast("Could not reach Flask API.");}
+}
+
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function sevClass(s){return s==="Critical"?"crit":s==="High"?"high":s==="Medium"?"med":"low"}
+
+function renderSummary(s,a){
+  $("score").textContent=Number(s.score??0).toFixed(2);
+  $("rating").textContent=s.rating||"—";
+  $("rating").className="badge "+((s.rating==="SECURE")?"good":"");
+  $("total").textContent=s.total_tests??0;
+  $("blocked").textContent=s.blocked??0;
+  $("vulnerable").textContent=s.vulnerable??0;
+  $("review").textContent=s.review??0;
+  $("adaptiveTests").textContent=s.adaptive_tests??a?.tests??0;
+
+  const sc=s.severity_counts||{}; const total=Math.max(s.vulnerable||0,1);
+  ["Critical","High","Medium","Low"].forEach(k=>{
+    const key=k.toLowerCase(), n=sc[k]||0;
+    $(key+"N").textContent=n;
+    $(key+"Bar").style.width=((n/total)*100)+"%";
+  });
+  $("severityTotal").textContent=(s.vulnerable||0)+" findings";
+
+  $("tested").textContent=a?.vulnerabilities_tested??s.adaptive_confirmed??0;
+  $("confirmed").textContent=a?.confirmed??s.adaptive_confirmed??0;
+  $("reviewed").textContent=a?.reviewed??0;
+  $("adaptiveCount").textContent=a?.tests??s.adaptive_tests??0;
+}
+
+function renderFindings(findings){
+  $("findingCount").textContent=(findings?.length||0)+" findings";
+  if(!findings?.length){$("findings").innerHTML='<div class="empty">No confirmed vulnerabilities.</div>';return}
+  $("findings").innerHTML=findings.map((f,i)=>{
+    const av=f.adaptive_verification||{};
+    const mit=f.developer_mitigations||[];
+    return `<article class="finding" data-index="${i}"><button class="btn retest-finding" data-id="${esc(f.id)}" style="float:right;padding:6px 9px;font-size:10px">RETEST</button>
+      <div class="finding-main">
+        <div><span class="finding-id">${esc(f.id)}</span><span class="finding-title">${esc(f.title)}</span></div>
+        <div class="finding-meta"><span class="pill ${sevClass(f.severity)}">${esc(f.severity)}</span><span class="pill">${esc(f.verdict)}</span></div>
+      </div>
+      <div class="finding-sub"><span>Confidence ${(Number(f.confidence||0)*100).toFixed(0)}%</span><span>Adaptive ${av.vulnerable??0}/${av.verification_count??0}</span><span>${esc(f.category)}</span></div>
+      <div class="details"><div class="detail-grid">
+        <div class="detail"><h4>Defect</h4><p>${esc((f.defects||[]).join("; ")||"Confirmed prompt-injection behavior.")}</p></div>
+        <div class="detail"><h4>Root Cause</h4><p>${esc(f.root_cause||"Not provided.")}</p></div>
+        <div class="detail"><h4>Impact</h4><p>${esc(f.impact||"Not provided.")}</p></div>
+        <div class="detail"><h4>Adaptive Verification</h4><p>${av.vulnerable??0} vulnerable / ${av.blocked??0} blocked / ${av.review??0} review across ${av.rounds??0} rounds.</p></div>
+        <div class="detail" style="grid-column:1/-1"><h4>Developer Mitigations</h4>${mit.length?`<ul>${mit.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"<p>No mitigation supplied.</p>"}</div>
+      </div></div>
+    </article>`
+  }).join("");
+  document.querySelectorAll(".finding").forEach(el=>el.addEventListener("click",()=>el.classList.toggle("open")));
+}
+
+async function runScan(){
+  const endpoint=$("endpoint").value.trim();
+  if(!endpoint){toast("Enter a target endpoint.");return}
+  setLoading(true);
+  try{
+    const body={endpoint,provider:$("provider").value};
+    if($("model").value.trim()) body.model=$("model").value.trim();
+    const r=await fetch("http://127.0.0.1:5000/api/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"Scan failed");
+    lastResult=data;
+    $("retestPanel").style.display="block";
+    $("retestStatus").textContent="Baseline captured. Apply your fixes, then click RETEST FIX.";
+    $("retestBtn").disabled=false;
+    renderSummary(data.summary,data.adaptive);
+    renderFindings(data.findings);
+    $("exportBtn").disabled=false;
+    setAPI(true);
+    toast("Security assessment completed.");
+  }catch(e){toast(e.message||"Scan failed.");setAPI(false)}
+  finally{setLoading(false)}
+}
+
+async function runRetest(){
+  if(!lastResult){toast("Run a security scan first.");return}
+  const endpoint=$("endpoint").value.trim();
+  const body={endpoint,provider:$("provider").value,baseline:lastResult};
+  if($("model").value.trim()) body.model=$("model").value.trim();
+  setLoading(true);
+  $("retestBtn").disabled=true;
+  try{
+    const r=await fetch("http://127.0.0.1:5000/api/retest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"Retest failed");
+    lastResult=data;
+    const i=data.improvement||{}, c=data.comparison||{};
+    $("beforeScore").textContent=Number(i.before_score||0).toFixed(2);
+    $("afterScore").textContent=Number(i.after_score||0).toFixed(2);
+    $("fixedCount").textContent=c.fixed_count||0;
+    $("remainingCount").textContent=c.still_vulnerable_count||0;
+    $("retestStatus").innerHTML=`<strong>${esc(i.security_status||"COMPLETED")}</strong> — Risk reduction: ${Number(i.risk_reduction_percent||0).toFixed(1)}%. Fixed: ${c.fixed_count||0}; still vulnerable: ${c.still_vulnerable_count||0}; review: ${c.review_count||0}; regressions: ${c.regression_count||0}.`;
+    renderSummary(data.after?.summary||data.summary||{},data.after?.adaptive||data.adaptive);
+    renderFindings(data.findings||[]);
+    toast("Retest completed.");
+  }catch(e){toast(e.message||"Retest failed.")}
+  finally{setLoading(false);$("retestBtn").disabled=false}
+}
+
+$("retestBtn").addEventListener("click",runRetest);
+
+$("scanBtn").addEventListener("click",runScan);
+$("healthBtn").addEventListener("click",checkHealth);
+$("exportBtn").addEventListener("click",()=>{
+  if(!lastResult)return;
+  const blob=new Blob([JSON.stringify(lastResult,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ai-security-assessment.json";a.click();URL.revokeObjectURL(a.href);
+});
+checkHealth();
+</script>
+</body>
+</html>
