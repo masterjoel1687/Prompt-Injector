@@ -45,14 +45,19 @@ class PromptInjectionTester:
         model=None,
         headers=None,
         api_key=None,
+        suite="smoke",
+        categories=None,
     ):
         self.provider = provider
         self.endpoint = endpoint
         self.model = model
         self.headers = headers or {}
         self.api_key = api_key
+        self.suite = (suite or "smoke").lower()
+        self.categories = categories
 
-        self.attacks = self._load_attacks()
+        all_attacks = self._load_attacks()
+        self.attacks = self._filter_attacks(all_attacks, self.suite, self.categories)
 
         self.executor = AIExecutor(
             provider=provider,
@@ -69,6 +74,44 @@ class PromptInjectionTester:
         )
 
         self.adaptive_planner = AdaptiveRedTeamPlanner()
+
+    # =========================================================
+    # SUITE & CATEGORY FILTERING
+    # =========================================================
+
+    @staticmethod
+    def _filter_attacks(attacks, suite, categories=None):
+        filtered = attacks
+        if suite and suite not in ("all", "comprehensive"):
+            filtered = [
+                a for a in filtered
+                if suite in a.get("suites", ["comprehensive"])
+            ]
+        if categories:
+            cat_set = set(c.lower() for c in categories)
+            filtered = [
+                a for a in filtered
+                if a.get("category", "").lower() in cat_set
+            ]
+        return filtered or attacks
+
+    # =========================================================
+    # SINGLE ATTACK (PLAYGROUND / AD-HOC)
+    # =========================================================
+
+    def test_single(self, prompt, metadata=None):
+        metadata = metadata or {}
+        attack = {
+            "id": metadata.get("id", "CUSTOM-001"),
+            "title": metadata.get("title", "Interactive Custom Probe"),
+            "category": metadata.get("category", "Custom Injection"),
+            "severity": metadata.get("severity", "High"),
+            "technique": metadata.get("technique", "User-defined payload"),
+            "owasp": metadata.get("owasp", "LLM01: Prompt Injection"),
+            "cwe": metadata.get("cwe", "CWE-20"),
+            "prompt": prompt,
+        }
+        return self._run_single_attack(attack)
 
     # =========================================================
     # LOAD BENCHMARK
@@ -190,6 +233,7 @@ class PromptInjectionTester:
                 "provider": self.provider,
                 "endpoint": self._safe_endpoint(),
                 "model": self.model,
+                "suite": self.suite,
             },
 
             "summary": score,
@@ -567,6 +611,11 @@ class PromptInjectionTester:
                     "technique",
                     "",
                 ),
+                "owasp": attack.get("owasp", "LLM01: Prompt Injection"),
+                "cwe": attack.get("cwe", "CWE-20"),
+                "prompt": attack.get("prompt", ""),
+                "response": execution.response or "",
+                "status_code": execution.status_code,
                 "verdict": "ERROR",
                 "confidence": 1.0,
                 "defects": [],
@@ -673,6 +722,11 @@ class PromptInjectionTester:
                 "technique",
                 "",
             ),
+            "owasp": attack.get("owasp", "LLM01: Prompt Injection"),
+            "cwe": attack.get("cwe", "CWE-20"),
+            "prompt": attack.get("prompt", ""),
+            "response": execution.response,
+            "status_code": execution.status_code,
             "verdict": verdict,
             "confidence": confidence,
             "defects": defects,
@@ -721,6 +775,11 @@ class PromptInjectionTester:
                 "technique",
                 "",
             ),
+            "owasp": attack.get("owasp", "LLM01: Prompt Injection"),
+            "cwe": attack.get("cwe", "CWE-20"),
+            "prompt": attack.get("prompt", ""),
+            "response": "",
+            "status_code": None,
             "verdict": "ERROR",
             "confidence": 1.0,
             "defects": [],

@@ -18,13 +18,22 @@ class RetestEngine:
         model=None,
         headers=None,
         api_key=None,
+        suite=None,
     ):
+        self.provider = provider
+        self.endpoint = endpoint
+        self.model = model
+        self.headers = headers
+        self.api_key = api_key
+        self.suite = suite
+
         self.tester = PromptInjectionTester(
             provider=provider,
             endpoint=endpoint,
             model=model,
             headers=headers,
             api_key=api_key,
+            suite=suite or "smoke",
         )
 
     # =========================================================
@@ -40,6 +49,16 @@ class RetestEngine:
         if not isinstance(baseline_results, list):
             raise ValueError(
                 "Baseline scan results must be a JSON list."
+            )
+
+        # Inherit the exact test suite from baseline scan if available
+        baseline_suite = baseline.get("target", {}).get("suite")
+        if baseline_suite and not self.suite:
+            self.tester.suite = baseline_suite
+            self.tester.attacks = self.tester._filter_attacks(
+                self.tester._load_attacks(),
+                baseline_suite,
+                self.tester.categories,
             )
 
         # Run the exact same scanner again.
